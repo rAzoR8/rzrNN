@@ -33,31 +33,74 @@ int main(int argc, char* argv[])
 	uint32_t uTestSize = std::min(images.GetCount() - uTrainingSize, 10000u);
 	uint32_t uTotal = uTrainingSize + uTestSize;
 
-	std::cout << "Enter layer sizes l1 l2 l3...: ";
+	std::shared_ptr<Network> nn = nullptr;
+
 	std::string line;
+	std::cout << "Load model (name / no): ";
 	std::getline(std::cin, line);
 
-	std::stringstream ss(line);
+	bool bEval = false;
 
-	std::vector<uint32_t> Layers = { images.GetColumns()*images.GetRows() }; // input
-
-	std::cout << "Layers: " << Layers.front() << " ";
-	while (ss.good())
+	if (line != "no")
 	{
-		uint32_t uLayer = 10u;
-		ss >> uLayer;
-		Layers.push_back(uLayer);
-		std::cout << uLayer << " ";
+		nn = std::make_shared<Network>(line);
+
+		std::cout << "Evaluate (yes/no): ";
+		std::getline(std::cin, line);
+		bEval = (line == "yes" || line == "y");
+	}
+	else
+	{
+		std::cout << "Enter layer sizes l1 l2 l3...: ";
+		std::getline(std::cin, line);
+
+		std::stringstream ss(line);
+
+		std::vector<uint32_t> Layers = { images.GetColumns()*images.GetRows() }; // input
+
+		std::cout << "Layers: " << Layers.front() << " ";
+		while (ss.good())
+		{
+			uint32_t uLayer = 10u;
+			ss >> uLayer;
+			Layers.push_back(uLayer);
+			std::cout << uLayer << " ";
+		}
+
+		Layers.push_back(10u); // output
+		std::cout << Layers.back() << std::endl;
+
+		nn = std::make_shared<Network>(Layers);
 	}
 
-	Layers.push_back(10u); // output
-	std::cout << Layers.back() << std::endl;
+	if (nn->HasLayer() == false)
+	{
+		std::cout << "Failed to initialize network" << std::endl;
+		return 0;
+	}
 
-	Network nn(Layers);
 	std::vector<float> img, lbl;
+	
+	Layer& Input(nn->GetInputLayer());
+	Layer& Output(nn->GetOutputLayer());
 
-	Layer& Input(nn.GetInputLayer());
-	Layer& Output(nn.GetOutputLayer());
+	if (bEval)
+	{
+		uint32_t uIndex = 0;
+		while (uIndex != -1)
+		{
+			std::cout << "Enter MNIST index to classify: ";
+			std::cin >> uIndex;
+
+			images.GetImage(uIndex, img);
+			PrintImg(img, images.GetRows(), images.GetColumns());
+			Input.FeedForward(img);
+
+			std::cout << "Predicted " << Output.ArgMax() << " [" << images.GetLabel(uIndex) << "]" << std::endl;
+		}
+
+		return 0;
+	}
 
 	char pConTitle[256];
 
@@ -68,7 +111,7 @@ int main(int argc, char* argv[])
 
 	static uint32_t uUpdate = 0u;
 
-	for (uint32_t e = 0; e < 500; ++e)
+	for (uint32_t e = 0; e < 10; ++e)
 	{
 		uint32_t uCorrectTrain = 0u;
 		uint32_t uCorrectTest = 0u;
@@ -122,6 +165,8 @@ int main(int argc, char* argv[])
 			<< uCorrectTrain << "/" << uTrainingSize << "\t"
 			<< uCorrectTest << "/" << uTestSize << "\t" << fTrain << "\t" << fTest << std::endl;
 	}
+
+	nn->Save("model.rzrnn");
 
 	//uint32_t uIndex = 0;
 	//while (uIndex != -1)
