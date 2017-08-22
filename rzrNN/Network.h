@@ -4,6 +4,12 @@
 #include <random>
 #include <string>
 
+template <typename T>
+inline void write(std::ofstream& str, const T& d) { str.write((const char*)&d, sizeof(T)); }
+
+template <typename T>
+inline void read(std::ifstream& str, T& d) { str.read((char*)&d, sizeof(T)); }
+
 class Network
 {
 public:
@@ -41,14 +47,14 @@ inline Network::Network(const std::string & _sModelPath)
 	std::cout << "Loading " << _sModelPath << "..." << std::endl;
 
 	uint32_t uLayers = 0u;
-	model >> uLayers;
+	read(model, uLayers);
 
 	std::vector<uint32_t> LayerSizes;
 
 	for (uint32_t i = 0; i < uLayers; i++)
 	{
 		uint32_t uSize = 0u;
-		model >> uSize;
+		read(model, uSize);
 		LayerSizes.push_back(uSize);
 	}
 
@@ -60,13 +66,13 @@ inline Network::Network(const std::string & _sModelPath)
 		uint32_t uWeights = uIdx > 0u ? LayerSizes[uIdx - 1u] : 0u;
 		for (Neuron& n : l.m_Neurons)
 		{
-			model >> n.m_fBias;
+			read(model, n.m_fBias);
 			if (uWeights > 0u)
 			{
 				n.m_Weights.resize(uWeights);
 				for (float& w : n.m_Weights)
 				{
-					model >> w;
+					read(model, w);
 				}
 			}
 		}
@@ -76,28 +82,28 @@ inline Network::Network(const std::string & _sModelPath)
 
 inline void Network::Save(const std::string& _sModelPath)
 {
-	std::ofstream model(_sModelPath.c_str(), std::ios_base::binary);
+	std::ofstream model(_sModelPath.c_str(), std::ios_base::binary | std::ios_base::trunc);
 
 	if (model.is_open() == false)
 		return;
 
 	std::cout << "Saving " << _sModelPath << "..." << std::endl;
 
-	model << (uint32_t)m_Layers.size();
+	write(model, (uint32_t)m_Layers.size());
 
 	for (const Layer& l : m_Layers)
 	{
-		model << (uint32_t)l.m_Neurons.size();
+		write(model, (uint32_t)l.m_Neurons.size());
 	}
 
 	for (const Layer& l : m_Layers)
 	{
 		for (const Neuron& n : l.m_Neurons)
 		{
-			model << n.m_fBias;
+			write(model, n.m_fBias);
 			for (const float& w : n.m_Weights)
 			{
-				model << w;
+				write(model,w);
 			}
 		}
 	}

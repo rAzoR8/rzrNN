@@ -96,13 +96,17 @@ int main(int argc, char* argv[])
 			PrintImg(img, images.GetRows(), images.GetColumns());
 			Input.FeedForward(img);
 
-			std::cout << "Predicted " << Output.ArgMax() << " [" << images.GetLabel(uIndex) << "]" << std::endl;
+			std::cout << "Predicted " << Output.ArgMax() << " [" << labels.GetLabel(uIndex) << "]" << std::endl;
 		}
 
 		return 0;
 	}
 
 	char pConTitle[256];
+
+	uint32_t uEpochs = 500u;
+	std::cout << "Enter epochs: ";
+	std::cin >> uEpochs;
 
 	float fLearningRate = 0.5f;
 
@@ -111,7 +115,7 @@ int main(int argc, char* argv[])
 
 	static uint32_t uUpdate = 0u;
 
-	for (uint32_t e = 0; e < 10; ++e)
+	for (uint32_t e = 0; e < uEpochs; ++e)
 	{
 		uint32_t uCorrectTrain = 0u;
 		uint32_t uCorrectTest = 0u;
