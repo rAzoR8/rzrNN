@@ -159,23 +159,14 @@ inline void Layer::BackProp(
 	if (uOutputSize != _Y.size())
 		return;
 
-	// initialize errors Layer L
+	// error d_ij is reset to 0 in forward pass
+	// initialize errors Layer L 
 	for (size_t i = 0; i < uOutputSize; ++i)
 	{
 		Neuron& n(pCurrent->m_Neurons[i]);
+		// d_ij = (a_ij-y_j) * sigmoid'(z_ij)
 		n.m_fError = gradC(n.m_fActivation, _Y[i]) * aPrime(n.m_fActivation);
 	}
-
-	// reset error for L0 -> L-1
-	//Layer* pNext = pCurrent->m_pPrevLayer;
-	//while (pNext != nullptr)
-	//{
-	//	for (Neuron& n : pNext->m_Neurons)
-	//	{
-	//		n.m_fError = 0.f;
-	//	}
-	//	pNext = pNext->m_pPrevLayer;
-	//}
 
 	Layer* pNext = pCurrent; // Layer l+1
 	pCurrent = pCurrent->m_pPrevLayer;
@@ -190,13 +181,14 @@ inline void Layer::BackProp(
 				// neuron l
 				Neuron& nL(pCurrent->m_Neurons[nL1.m_InputIndices[i]]);
 
-				// error is reset to 0 in forward pass
-				// compute error gradient
+				// compute error gradient: d_l = w_l+1 * d_l+1 * sigmoid'(z_l)
 				nL.m_fError += nL1.m_Weights[i] * nL1.m_fError * aPrime(nL.m_fWeightedOutput);
 
+				// learning rate n:
 				float fRate = _fLearningRate / (float)_uTrainingSetSize;
-				// update weights and biases
-				nL1.m_Weights[i] -= fRate * nL.m_fActivation * nL1.m_fError; //  a_l-1 * d_l
+				// update weights and biases: w_l = w_l - n*gradC(w_l)
+				// gradC(w) = a_l-1 * d_l
+				nL1.m_Weights[i] -= fRate * nL.m_fActivation * nL1.m_fError; 
 				nL1.m_fBias -= fRate * nL1.m_fError;
 			}	
 		}
